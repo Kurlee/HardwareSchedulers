@@ -27,9 +27,16 @@ int process_page_access_fifo(struct PTE page_table[TABLEMAX],int *table_cnt, int
 
   else if (*frame_cnt > 0)
     {
-      *frame_cnt = *frame_cnt - 1;
-      page_table[page_number].frame_number = frame_pool[*frame_cnt];
-      return page_table[page_number].frame_number;
+        int next_frame = frame_pool[*frame_cnt - 1];
+        frame_pool[*frame_cnt - 1] = frame_pool[*frame_cnt];
+        *frame_cnt = *frame_cnt - 1;
+        page_table[page_number].is_valid = 1;
+        page_table[page_number].frame_number = frame_pool[*frame_cnt];
+        page_table[page_number].arrival_timestamp = current_timestamp;
+        page_table[page_number].last_access_timestamp = current_timestamp;
+        page_table[page_number].reference_count = 1;
+        page_table[page_number].frame_number = next_frame;
+        return page_table[page_number].frame_number;
     }
 
   else 
@@ -52,10 +59,16 @@ int process_page_access_fifo(struct PTE page_table[TABLEMAX],int *table_cnt, int
       page_table[eavi].arrival_timestamp = 0;
       page_table[eavi].last_access_timestamp = 0;
       page_table[eavi].reference_count = 0;
+      page_table[page_number].is_valid = 1;
+      page_table[page_number].arrival_timestamp = current_timestamp;
+      page_table[page_number].last_access_timestamp = current_timestamp;
+      page_table[page_number].reference_count = 1;
       page_table[page_number].frame_number = page_table[eavi].frame_number;
+      page_table[eavi].frame_number = -1;
       return page_table[page_number].frame_number;
   }
 }
+
 
 
 
@@ -137,6 +150,11 @@ int process_page_access_lru(struct PTE page_table[TABLEMAX],int *table_cnt, int 
         int next_frame = frame_pool[*frame_cnt - 1];
         frame_pool[*frame_cnt - 1] = frame_pool[*frame_cnt];
         *frame_cnt = *frame_cnt - 1;
+        page_table[page_number].is_valid = 1;
+        page_table[page_number].frame_number = frame_pool[*frame_cnt];
+        page_table[page_number].arrival_timestamp = current_timestamp;
+        page_table[page_number].last_access_timestamp = current_timestamp;
+        page_table[page_number].reference_count = 1;
         page_table[page_number].frame_number = next_frame;
         return page_table[page_number].frame_number;
     }
@@ -161,7 +179,12 @@ int process_page_access_lru(struct PTE page_table[TABLEMAX],int *table_cnt, int 
       page_table[eavi].arrival_timestamp = 0;
       page_table[eavi].last_access_timestamp = 0;
       page_table[eavi].reference_count = 0;
+      page_table[page_number].is_valid = 1;
+      page_table[page_number].arrival_timestamp = current_timestamp;
+      page_table[page_number].last_access_timestamp = current_timestamp;
+      page_table[page_number].reference_count = 1;
       page_table[page_number].frame_number = page_table[eavi].frame_number;
+      page_table[eavi].frame_number = -1;
       return page_table[page_number].frame_number;
   }
 }
@@ -246,6 +269,11 @@ int process_page_access_lfu(struct PTE page_table[TABLEMAX],int *table_cnt, int 
         int next_frame = frame_pool[*frame_cnt - 1];
         frame_pool[*frame_cnt - 1] = frame_pool[*frame_cnt];
         *frame_cnt = *frame_cnt - 1;
+        page_table[page_number].is_valid = 1;
+        page_table[page_number].frame_number = frame_pool[*frame_cnt];
+        page_table[page_number].arrival_timestamp = current_timestamp;
+        page_table[page_number].last_access_timestamp = current_timestamp;
+        page_table[page_number].reference_count = 1;
         page_table[page_number].frame_number = next_frame;
         return page_table[page_number].frame_number;
     }
@@ -261,7 +289,7 @@ int process_page_access_lfu(struct PTE page_table[TABLEMAX],int *table_cnt, int 
               eavi = i;
               first_pass = 0;
           }
-          else if (page_table[i].is_valid && page_table[i].reference_count < page_table[eavi].reference_count)
+          else if (page_table[i].is_valid && (page_table[i].reference_count <= page_table[eavi].reference_count && page_table[i].arrival_timestamp < page_table[eavi].arrival_timestamp))
           {
               eavi = i;
           }
@@ -270,7 +298,12 @@ int process_page_access_lfu(struct PTE page_table[TABLEMAX],int *table_cnt, int 
       page_table[eavi].arrival_timestamp = 0;
       page_table[eavi].last_access_timestamp = 0;
       page_table[eavi].reference_count = 0;
+      page_table[page_number].is_valid = 1;
+      page_table[page_number].arrival_timestamp = current_timestamp;
+      page_table[page_number].last_access_timestamp = current_timestamp;
+      page_table[page_number].reference_count = 1;
       page_table[page_number].frame_number = page_table[eavi].frame_number;
+      page_table[eavi].frame_number = -1;
       return page_table[page_number].frame_number;
   }
 }
@@ -342,3 +375,30 @@ int count_page_faults_lfu(struct PTE page_table[TABLEMAX],int table_cnt, int ref
           
 
 
+int main()
+{
+    struct PTE zero = {0,-1,-1,-1,-1};
+    struct PTE one = {0,-1,-1,-1,-1};
+    struct PTE two = {1,10,3,3,1};
+    struct PTE three = {0,-1,-1,-1,-1};
+    struct PTE four = {0,-1,-1,-1,-1};
+    struct PTE five = {1,20,2,4,2};
+    struct PTE six = {0,-1,-1,-1,-1};
+    struct PTE seven = {1,30,1,1,1};
+    struct PTE page_table[] = {zero, zero, zero, zero, zero, zero, zero, zero};
+    int reference_string[] = {0, 3, 2, 6, 3, 4, 5, 2, 4, 5, 6};
+    int reference_cnt = 11;
+    int table_cnt = 8;
+    int page_number = 0;
+    int frame_pool[] = {0,1,2};
+    int frame_cnt = 3;
+    int current_timestamp = 12;
+    int faults = count_page_faults_fifo(page_table, table_cnt, reference_string, reference_cnt, frame_pool, frame_cnt);
+    printf("The page table contains the following.\n");
+    for (int i = 0; i < table_cnt; i++)
+    {
+        printf("Page #: %d IV: %d FN: %d ATS: %d LATS: %d RC: %d\n",i, page_table[i].is_valid, page_table[i].frame_number, page_table[i].arrival_timestamp, page_table[i].last_access_timestamp, page_table[i].reference_count);
+    }
+    printf("Table Count: %d, Frame Count: %d, \nWith Fault Count:  %d\n", table_cnt, frame_cnt, faults);
+
+}
