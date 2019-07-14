@@ -41,7 +41,6 @@ struct MEMORY_BLOCK best_fit_allocate(int request_size, struct MEMORY_BLOCK memo
     }
     else
     {
-        printf("next block index: %d", next_block);
         *map_cnt = *map_cnt + 1;
         for ( int i = *map_cnt; i > next_block; i--)
         {
@@ -129,7 +128,6 @@ struct MEMORY_BLOCK worst_fit_allocate(int request_size, struct MEMORY_BLOCK mem
     }
     else
     {
-        printf("next block index: %d", next_block);
         *map_cnt = *map_cnt + 1;
         for ( int i = *map_cnt; i > next_block; i--)
         {
@@ -189,12 +187,43 @@ struct MEMORY_BLOCK next_fit_allocate(int request_size, struct MEMORY_BLOCK memo
 
 void release_memory(struct MEMORY_BLOCK freed_block, struct MEMORY_BLOCK memory_map[MAPMAX],int *map_cnt)
 {
-    if (memory_map[freed_block - 1].process_id == 0 && memory_map[freed_block + 1].process_id == 0)
+    int fbi; // index to hold the position of the freed block in the memory map
+    for (int i = 0; i < *map_cnt; i++)
     {
-        memory_map[freed_block - 1].end_address = memory_map[freed_block + 1].end address;
-        memory_map[freed_block - 1].segment_size = (memory_map[freed_block + 1].end address - memory_map[freed_block -1].start_address) + 1;
-        *map_cnt = *map_cnt -2;
-        for (int i = (*map_cnt); 
+        if (freed_block.process_id == memory_map[i].process_id)
+        {
+            fbi = i;
+            break;
+        }
+    }
+    if (memory_map[fbi-1].process_id == 0 && memory_map[fbi + 1].process_id ==0)
+    {
+        memory_map[fbi - 1].end_address = memory_map[fbi + 1].end_address;
+        memory_map[fbi - 1].segment_size = (memory_map[fbi -1].end_address - memory_map[fbi - 1].start_address) + 1;
+        *map_cnt = *map_cnt - 2;
+        for (int i = fbi; i < *map_cnt; i++)
+            memory_map[i] = memory_map[i+2];
+    }
+    else if (memory_map[fbi-1].process_id == 0)
+    {
+        memory_map[fbi - 1].end_address = memory_map[fbi].end_address;
+        memory_map[fbi - 1].segment_size = (memory_map[fbi -1].end_address - memory_map[fbi - 1].start_address) + 1;
+        *map_cnt = *map_cnt - 1;
+        for (int i = fbi; i < *map_cnt; i++)
+            memory_map[i] = memory_map[i+1];
+    }
+    else if (memory_map[fbi+1].process_id == 0)
+    {
+        memory_map[fbi].end_address = memory_map[fbi+1].end_address;
+        memory_map[fbi].segment_size = (memory_map[fbi].end_address - memory_map[fbi].start_address) + 1;
+        memory_map[fbi].process_id = 0;
+        *map_cnt = *map_cnt - 1;
+        for (int i = fbi + 1; i < *map_cnt; i++)
+            memory_map[i] = memory_map[i+1];
+    }
+    else
+    {
+        memory_map[fbi].process_id = 0;
     }
 }
 /*
