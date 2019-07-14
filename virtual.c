@@ -225,7 +225,7 @@ int count_page_faults_lru(struct PTE page_table[TABLEMAX],int table_cnt, int ref
         // page being referenced is NOT in memory AND there ARE NO empty frames
         else
         {
-          int eavi; // earliest arriving valid pte index
+          int eavi = -1; // earliest arriving valid pte index
           int first_pass = 1; // marker for first pass through loop
           for (int i = 0; i < table_cnt; i++)
           {
@@ -239,18 +239,18 @@ int count_page_faults_lru(struct PTE page_table[TABLEMAX],int table_cnt, int ref
                   eavi = i;
                   
               }
-              page_table[eavi].is_valid = 0;
-              page_table[eavi].arrival_timestamp = 0;
-              page_table[eavi].last_access_timestamp = 0;
-              page_table[eavi].reference_count = 0;
-              page_table[j].is_valid = 1;
-              page_table[j].frame_number = page_table[eavi].frame_number;
-              page_table[j].arrival_timestamp = timestamp;
-              page_table[j].last_access_timestamp = timestamp;
-              page_table[j].reference_count = 1;
           }
-          timestamp = timestamp + 1;
-          faults = faults + 1;
+            page_table[eavi].is_valid = 0;
+            page_table[eavi].arrival_timestamp = 0;
+            page_table[eavi].last_access_timestamp = 0;
+            page_table[eavi].reference_count = 0;
+            page_table[j].is_valid = 1;
+            page_table[j].frame_number = page_table[eavi].frame_number;
+            page_table[j].arrival_timestamp = timestamp;
+            page_table[j].last_access_timestamp = timestamp;
+            page_table[j].reference_count = 1;
+            timestamp = timestamp + 1;
+            faults = faults + 1;
         }
     }
     return faults;
@@ -347,7 +347,7 @@ int count_page_faults_lfu(struct PTE page_table[TABLEMAX],int table_cnt, int ref
         // page being referenced is NOT in memory AND there ARE NO empty frames
         else
         {
-          int eavi; // earliest arriving valid pte index
+          int eavi = -1; // earliest arriving valid pte index
           int first_pass = 1; // marker for first pass through loop
           for (int i = 0; i < table_cnt; i++)
           {
@@ -356,23 +356,23 @@ int count_page_faults_lfu(struct PTE page_table[TABLEMAX],int table_cnt, int ref
                   eavi = i;
                   first_pass = 0;
               }
-              else if (page_table[i].is_valid && page_table[i].reference_count < page_table[eavi].reference_count)
+              else if (page_table[i].is_valid && (page_table[i].reference_count <= page_table[eavi].reference_count && page_table[i].arrival_timestamp < page_table[eavi].arrival_timestamp))
               {
                   eavi = i;
                   
               }
-              page_table[eavi].is_valid = 0;
-              page_table[eavi].arrival_timestamp = 0;
-              page_table[eavi].last_access_timestamp = 0;
-              page_table[eavi].reference_count = 0;
-              page_table[j].is_valid = 1;
-              page_table[j].frame_number = page_table[eavi].frame_number;
-              page_table[j].arrival_timestamp = timestamp;
-              page_table[j].last_access_timestamp = timestamp;
-              page_table[j].reference_count = 1;
           }
-          timestamp = timestamp + 1;
-          faults = faults + 1;
+            page_table[eavi].is_valid = 0;
+            page_table[eavi].arrival_timestamp = 0;
+            page_table[eavi].last_access_timestamp = 0;
+            page_table[eavi].reference_count = 0;
+            page_table[j].is_valid = 1;
+            page_table[j].frame_number = page_table[eavi].frame_number;
+            page_table[j].arrival_timestamp = timestamp;
+            page_table[j].last_access_timestamp = timestamp;
+            page_table[j].reference_count = 1;
+            timestamp = timestamp + 1;
+            faults = faults + 1;
         }
     }
     return faults;
@@ -380,7 +380,7 @@ int count_page_faults_lfu(struct PTE page_table[TABLEMAX],int table_cnt, int ref
 
           
 
-
+/*
 int main()
 {
     struct PTE zero = {0,-1,-1,-1,-1};
@@ -392,14 +392,14 @@ int main()
     struct PTE six = {0,-1,-1,-1,-1};
     struct PTE seven = {1,30,1,1,1};
     struct PTE page_table[] = {zero, zero, zero, zero, zero, zero, zero, zero};
-    int reference_string[] = {0, 3, 2, 6, 3, 4, 5, 2, 4, 6, 5};
+    int reference_string[] = {0, 3, 2, 6, 3, 4, 5, 2, 6, 4, 5};
     int reference_cnt = 11;
     int table_cnt = 8;
     int page_number = 0;
     int frame_pool[] = {0,1,2};
     int frame_cnt = 3;
     int current_timestamp = 12;
-    int faults = count_page_faults_lru(page_table, table_cnt, reference_string, reference_cnt, frame_pool, frame_cnt);
+    int faults = count_page_faults_lfu(page_table, table_cnt, reference_string, reference_cnt, frame_pool, frame_cnt);
     printf("The page table contains the following.\n");
     for (int i = 0; i < table_cnt; i++)
     {
@@ -408,3 +408,4 @@ int main()
     printf("Table Count: %d, Frame Count: %d, \nWith Fault Count:  %d\n", table_cnt, frame_cnt, faults);
 
 }
+*/
